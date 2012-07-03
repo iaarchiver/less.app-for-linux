@@ -1,0 +1,67 @@
+#!/usr/bin/env ruby
+require 'Qt4'
+
+class Tray < Qt::SystemTrayIcon
+    
+    slots :addWatchList,:open,:quit
+
+    def initialize(parent = nil)
+        super(parent)
+        @threads = Array.new()
+
+        @quitAction = Qt::Action.new(tr("&Quit"), self)
+        connect(@quitAction, SIGNAL(:triggered), self, SLOT(:quit))
+        
+        @watchList = Qt::Menu.new(tr("&Watch list")) 
+        @trayIconMenu = Qt::Menu.new(nil) do |t|
+            t.addMenu(@watchList)
+            t.addSeparator()
+            t.addAction(@quitAction)
+        end
+
+        self.contextMenu = @trayIconMenu
+        self.icon = Qt::Icon.new("#{File.dirname(__FILE__)}/icons/tray-icon.png")
+        self.toolTip = 'Lessapp'
+
+        ARGV.each do |i|
+            self.addWatchList(i)
+        end
+    end
+
+    def open
+        cmd = "nautilus #{sender().text()}"
+        fork {exec cmd}
+    end
+
+    def quit
+        @threads.each do |thread|
+            th_ppid = `ps -o pid= --ppid #{thread}`.to_i
+            Process.kill(2, test)
+        end
+
+        $qApp.quit
+    end
+
+    def addWatchList(path)
+        cmd = "#{File.dirname(__FILE__)}/lessapp.sh #{path}"
+        thread = fork {exec cmd}
+        @threads.push(thread)
+
+        @openAction = Qt::Action.new(tr("#{path}"), self)
+        connect(@openAction, SIGNAL(:triggered), self, SLOT(:open))
+        @watchList.addAction(@openAction)
+    end
+end
+
+app = Qt::Application.new(ARGV)
+
+if !Qt::SystemTrayIcon.isSystemTrayAvailable
+    Qt::MessageBox.critical(nil, Qt::Object.tr("Systray"),
+                              Qt::Object.tr("I couldn't detect any system tray " \
+                                          "on this system."))
+    exit 1
+end
+
+tray = Tray.new
+tray.show
+app.exec

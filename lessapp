@@ -36,6 +36,7 @@ class Tray < Qt::SystemTrayIcon
     def quit
         @threads.each do |thread|
             th_ppid = `ps -o pid= --ppid #{thread}`.to_i
+            Process.kill(2, thread)
             Process.kill(2, th_ppid)
         end
 

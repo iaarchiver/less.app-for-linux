@@ -1,16 +1,12 @@
 #!/bin/bash
 
+icons_dir=$(cd -P -- "$(dirname -- "$0")/icons" && pwd -P)
+trap 'pkill -P $(ps -o pid= --ppid $$ | head -1);exit 0' 1 2 3 15;
+
 if [ ! -d $1 ]; then
     echo "Not a directory: $1"
     exit -1
 fi
-icons_dir=$(cd -P -- "$(dirname -- "$0")/icons" && pwd -P)
-
-#trap 'ps -o pid= --ppid `ps -o pid= --ppid $$` | xargs kill -9; exit 0' 2;
-#trap 'pkill $(pgrep lessapp.sh | sed -e "s/^/ -P /"| tr -d "\n");exit 0' 1 2 3 15;
-#trap 'echo $(pgrep lessapp.sh)' 2;
-#trap 'ps -o pid= --ppid `ps -o pid= --ppid $$` | xargs kill -9'1 2 3 15;
-trap 'pkill -P $(ps -o pid= --ppid $$ | head -1);exit 0' 1 2 3 15;
 
 while read line; do
   filename="$(basename $line)"
